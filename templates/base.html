@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Productos{% endblock %}</title>
+    
+    <!-- Tailwind CSS desde CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fontawesome desde CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Estilos adicionales -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block styles %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Barra de navegación -->
+    <nav class="bg-blue-600 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-center h-16">
+                <div class="flex items-center justify-between w-full">
+                    <div class="flex-shrink-0">
+                        <a href="{{ url_for('index') }}" class="text-white text-xl font-bold">
+                            <i class="fas fa-box-open mr-2"></i>CRUD Productos
+                        </a>
+                    </div>
+                    <div class="hidden sm:flex sm:space-x-8">
+                        <a href="{{ url_for('index') }}" class="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-home mr-1"></i>Inicio
+                        </a>
+                        <a href="{{ url_for('create_product') }}" class="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-plus-circle mr-1"></i>Nuevo Producto
+                        </a>
+                    </div>
+                    
+                    <!-- Menú móvil -->
+                    <div class="flex sm:hidden">
+                        <button type="button" id="mobile-menu-button" class="text-white hover:text-blue-200">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menú móvil -->
+        <div class="sm:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('index') }}" class="text-white hover:text-blue-200 block px-3 py-2 rounded-md text-base font-medium">
+                    <i class="fas fa-home mr-1"></i>Inicio
+                </a>
+                <a href="{{ url_for('create_product') }}" class="text-white hover:text-blue-200 block px-3 py-2 rounded-md text-base font-medium">
+                    <i class="fas fa-plus-circle mr-1"></i>Nuevo Producto
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mensajes flash -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% set alert_color = 'green' if category == 'success' else ('yellow' if category == 'warning' else 'red') %}
+                    <div class="bg-{{ alert_color }}-100 border-l-4 border-{{ alert_color }}-500 text-{{ alert_color }}-700 p-4 mb-4 flash-message">
+                        <div class="flex">
+                            <div class="py-1">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-exclamation-circle{% endif %} text-{{ alert_color }}-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm">{{ message }}</p>
+                            </div>
+                            <button type="button" class="ml-auto close-flash" onclick="this.parentElement.parentElement.remove()">
+                                <i class="fas fa-times text-{{ alert_color }}-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Contenido principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-inner py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-600">Sistema de Gestión de Productos &copy; 2025</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Manejar menú móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Auto-ocultar mensajes flash después de 5 segundos
+            setTimeout(function() {
+                document.querySelectorAll('.flash-message').forEach(function(el) {
+                    el.style.opacity = '0';
+                    setTimeout(function() {
+                        el.remove();
+                    }, 500);
+                });
+            }, 5000);
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
