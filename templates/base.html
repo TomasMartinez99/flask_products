@@ -14,7 +14,18 @@
     <!-- Estilos adicionales -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
-    {% block styles %}{% endblock %}
+    {% block styles %}
+        <style>
+            input, textarea {
+                border: 1px solid #e5edff !important;
+                outline: none;
+            }
+            
+            input:focus, textarea:focus {
+                border-color: #93c5fd !important;
+            }
+        </style>
+    {% endblock %}
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Barra de navegación -->

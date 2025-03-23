@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 # Crear aplicación Flask
 app = Flask(__name__)
 
-# Configuración simplificada
+# Configuración 
 app.config['SECRET_KEY'] = 'clave-secreta-12345'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/flask_user'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

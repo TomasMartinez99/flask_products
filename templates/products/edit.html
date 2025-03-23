@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Crear Nuevo Producto{% endblock %}
+{% block title %}Editar Producto{% endblock %}
 
 {% block content %}
 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
     <div class="px-4 py-5 sm:px-6">
-        <h1 class="text-2xl font-bold text-gray-900">Crear Nuevo Producto</h1>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">Complete los detalles del producto</p>
+        <h1 class="text-2xl font-bold text-gray-900">Editar Producto</h1>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">Actualice los detalles del producto</p>
     </div>
     <div class="border-t border-gray-200">
         <form method="POST" enctype="multipart/form-data" class="p-6">
@@ -17,8 +17,8 @@
                         Nombre del producto <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <input type="text" name="name" id="name" required
-                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <input type="text" name="name" id="name" required value="{{ product.name }}"
+                            class="shadow-sm focus:ring-blue-300 focus:border-blue-300 block w-full sm:text-sm border-blue-100 rounded-md">
                     </div>
                 </div>
                 
@@ -31,7 +31,7 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">$</span>
                         </div>
-                        <input type="number" name="price" id="price" required min="0" step="0.01"
+                        <input type="number" name="price" id="price" required min="0" step="0.01" value="{{ product.price }}"
                             class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md">
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                     </label>
                     <div class="mt-1">
                         <textarea id="description" name="description" rows="4"
-                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ product.description or '' }}</textarea>
                     </div>
                     <p class="mt-2 text-sm text-gray-500">Breve descripción del producto</p>
                 </div>
@@ -56,21 +56,24 @@
                     <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                         <div class="space-y-1 text-center w-full">
                             <!-- Vista previa de la imagen -->
-                            <div id="preview-container" class="hidden mb-3">
-                                <img id="image-preview" class="mx-auto h-48 object-contain" alt="Vista previa">
+                            <div id="preview-container" class="{{ 'hidden' if not product.image }}">
+                                <img id="image-preview" src="{{ get_image_url(product.image) if product.image else '' }}" class="mx-auto h-48 object-contain" alt="Vista previa">
                                 <button type="button" onclick="removeImage()" class="mt-2 text-sm text-red-500 hover:text-red-700">
                                     <i class="fas fa-times-circle mr-1"></i>Eliminar imagen
                                 </button>
+                                {% if product.image %}
+                                <p class="mt-2 text-xs text-gray-500">Imagen actual: {{ product.image }}</p>
+                                {% endif %}
                             </div>
                             
                             <!-- Contenedor para el ícono y texto de subir -->
-                            <div id="upload-container">
+                            <div id="upload-container" class="{{ 'hidden' if product.image }}">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                                 <div class="flex justify-center text-sm text-gray-600">
                                     <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                                        <span>Subir una imagen</span>
+                                        <span>{{ 'Cambiar' if product.image else 'Subir' }} imagen</span>
                                         <input id="image" name="image" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
                                     </label>
                                     <p class="pl-1">o arrastrar y soltar</p>
@@ -85,11 +88,11 @@
             </div>
             
             <div class="mt-6 flex justify-end space-x-3">
-                <a href="{{ url_for('index') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                <a href="{{ url_for('view_product', product_id=product.id) }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     Cancelar
                 </a>
                 <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    Guardar producto
+                    Actualizar producto
                 </button>
             </div>
         </form>
@@ -120,18 +123,34 @@
     }
 
     function removeImage() {
+        // Limpiar el campo de archivo
         document.getElementById('image').value = '';
-        resetImageUpload();
+        
+        // En lugar de usar resetImageUpload, configuramos manualmente para mostrar la pantalla de carga
+        const preview = document.getElementById('image-preview');
+        const previewContainer = document.getElementById('preview-container');
+        const uploadContainer = document.getElementById('upload-container');
+        
+        // Ocultar la vista previa y mostrar el contenedor de carga
+        preview.src = '';
+        previewContainer.classList.add('hidden');
+        uploadContainer.classList.remove('hidden');
     }
 
     function resetImageUpload() {
-    const preview = document.getElementById('image-preview');
-    const previewContainer = document.getElementById('preview-container');
-    const uploadContainer = document.getElementById('upload-container');
-    
-    preview.src = '';
-    previewContainer.classList.add('hidden');
-    uploadContainer.classList.remove('hidden');
-}
+        const preview = document.getElementById('image-preview');
+        const previewContainer = document.getElementById('preview-container');
+        const uploadContainer = document.getElementById('upload-container');
+        
+        {% if product.image %}
+            preview.src = "{{ get_image_url(product.image) }}";
+            previewContainer.classList.remove('hidden');
+            uploadContainer.classList.add('hidden');
+        {% else %}
+            preview.src = '';
+            previewContainer.classList.add('hidden');
+            uploadContainer.classList.remove('hidden');
+        {% endif %}
+    }
 </script>
 {% endblock %}
