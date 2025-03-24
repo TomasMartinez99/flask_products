@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect
 import os
 from werkzeug.utils import secure_filename
 
@@ -35,8 +36,13 @@ class Products(db.Model):
         return f'<Product {self.name}>'
 
 # Crear todas las tablas en la base de datos
-with app.app_context():
-    db.create_all()
+@app.before_first_request
+def create_tables():
+    inspector = inspect(db.engine)
+    if not inspector.has_table("products"):
+        with app.app_context():
+            db.create_all()
+            print("Tablas creadas.")
 
 # Rutas para CRUD de productos
 @app.route('/')
