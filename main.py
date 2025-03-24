@@ -162,5 +162,9 @@ def utility_processor():
     return dict(get_image_url=get_image_url)
 
 # Ejecutar la aplicación
+""" if __name__ == '__main__':
+    app.run(debug=True) """
+# Ejecutar la aplicación
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
