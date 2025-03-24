@@ -36,13 +36,20 @@ class Products(db.Model):
         return f'<Product {self.name}>'
 
 # Crear todas las tablas en la base de datos
-@app.before_first_request
 def create_tables():
     inspector = inspect(db.engine)
     if not inspector.has_table("products"):
-        with app.app_context():
-            db.create_all()
-            print("Tablas creadas.")
+        db.create_all()
+        print("Tablas creadas.")
+        
+@app.after_request
+def after_request_func(response):
+    # Esta función se ejecuta después de cada solicitud
+    # Pero podemos usar una variable global para asegurarnos de que solo se ejecute una vez
+    if not getattr(app, 'db_initialized', False):
+        create_tables()
+        app.db_initialized = True
+    return response
 
 # Rutas para CRUD de productos
 @app.route('/')
