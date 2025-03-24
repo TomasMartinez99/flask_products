@@ -161,6 +161,10 @@ def utility_processor():
     
     return dict(get_image_url=get_image_url)
 
+@app.route('/health')
+def health():
+    return 'OK - App is running'
+
 # Ejecutar la aplicación
 """ if __name__ == '__main__':
     app.run(debug=True) """
