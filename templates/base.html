@@ -71,27 +71,31 @@
     </nav>
 
     <!-- Mensajes flash -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    {% set alert_color = 'green' if category == 'success' else ('yellow' if category == 'warning' else 'red') %}
-                    <div class="bg-{{ alert_color }}-100 border-l-4 border-{{ alert_color }}-500 text-{{ alert_color }}-700 p-4 mb-4 flash-message">
-                        <div class="flex">
-                            <div class="py-1">
-                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-exclamation-circle{% endif %} text-{{ alert_color }}-500"></i>
+    <div class="flex justify-center w-full mt-4">
+        <div class="w-full max-w-md px-2">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% set alert_color = 'green' if category == 'success' else ('yellow' if category == 'warning' else 'red') %}
+                        <div class="bg-{{ alert_color }}-100 border-l-4 border-{{ alert_color }}-500 text-{{ alert_color }}-700 p-4 mb-4 flash-message rounded shadow-md">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-exclamation-circle{% endif %} text-{{ alert_color }}-500"></i>
+                                </div>
+                                <div class="flex-grow mx-3 text-center">
+                                    <p class="text-sm">{{ message }}</p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <button type="button" class="close-flash" onclick="this.parentElement.parentElement.parentElement.remove()">
+                                        <i class="fas fa-times text-{{ alert_color }}-500"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="ml-3">
-                                <p class="text-sm">{{ message }}</p>
-                            </div>
-                            <button type="button" class="ml-auto close-flash" onclick="this.parentElement.parentElement.remove()">
-                                <i class="fas fa-times text-{{ alert_color }}-500"></i>
-                            </button>
                         </div>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
     </div>
 
     <!-- Contenido principal -->
