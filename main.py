@@ -8,15 +8,10 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
 # Configuración local
-""" app.config['SECRET_KEY'] = '9hQ3cGvTp8sN6fEw7mZy2kJxAuRdXb4V'
+app.config['SECRET_KEY'] = '9hQ3cGvTp8sN6fEw7mZy2kJxAuRdXb4V'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/flask_products'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads' """
-# Configuración para Railway
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', '9hQ3cGvTp8sN6fEw7mZy2kJxAuRdXb4V')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@localhost/flask_products')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 # Asegurarse de que existe la carpeta de uploads
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -162,9 +157,5 @@ def utility_processor():
     return dict(get_image_url=get_image_url)
 
 # Ejecutar la aplicación
-""" if __name__ == '__main__':
-    app.run(debug=True) """
-# Ejecutar la aplicación
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True)
