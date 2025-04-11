@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect
-import os
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
+import os
+from models import db, User, Products
+from forms import LoginForm, RegisterForm, ProductForm, SearchForm
 
 # Crear aplicación Flask
 app = Flask(__name__)
@@ -17,52 +18,104 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Inicializar la base de datos
-db = SQLAlchemy(app)
+db.init_app(app)
 
-# Definir el modelo de Producto
-class Products(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    price = db.Column(db.Float, nullable=False)
-    image = db.Column(db.String(255), nullable=True)
+# Configurar Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
+login_manager.login_message_category = 'info'
 
-    def __repr__(self):
-        return f'<Product {self.name}>'
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # Crear todas las tablas en la base de datos
 def create_tables():
-    inspector = inspect(db.engine)
-    if not inspector.has_table("products"):
+    with app.app_context():
         db.create_all()
-        print("Tablas creadas.")
         
-@app.after_request
-def after_request_func(response):
-    # Esta función se ejecuta después de cada solicitud
-    # Pero podemos usar una variable global para asegurarnos de que solo se ejecute una vez
-    if not getattr(app, 'db_initialized', False):
-        create_tables()
-        app.db_initialized = True
-    return response
+        # Crear un usuario admin si no existe
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(username='admin', email='admin@example.com', is_admin=True)
+            admin.set_password('adminpass')
+            db.session.add(admin)
+            db.session.commit()
+            print("Usuario admin creado.")
+        
+        print("Tablas creadas.")
+
+@app.before_first_request
+def initialize_database():
+    create_tables()
+
+# Rutas de autenticación
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            flash('Has iniciado sesión correctamente', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page if next_page else url_for('index'))
+        else:
+            flash('Usuario o contraseña incorrectos', 'danger')
+    
+    return render_template('login.html', form=form)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('¡Registro exitoso! Ahora puedes iniciar sesión', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Has cerrado sesión', 'info')
+    return redirect(url_for('index'))
 
 # Rutas para CRUD de productos
 @app.route('/')
 def index():
-    products = Products.query.all()
-    return render_template('products/index.html', products=products)
+    search_form = SearchForm(request.args, meta={'csrf': False})
+    query = request.args.get('search', '')
+    
+    if query:
+        products = Products.query.filter(Products.name.contains(query)).all()
+    else:
+        products = Products.query.all()
+    
+    return render_template('products/index.html', products=products, search_form=search_form)
 
 @app.route('/products/create', methods=['GET', 'POST'])
+@login_required
 def create_product():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
-        price = request.form.get('price')
-        
+    form = ProductForm()
+    
+    if form.validate_on_submit():
         # Manejar la carga de imagen
         image = None
-        if 'image' in request.files:
-            file = request.files['image']
+        if form.image.data:
+            file = form.image.data
             if file.filename != '':
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -71,10 +124,11 @@ def create_product():
         
         # Crear y guardar el nuevo producto
         product = Products(
-            name=name,
-            description=description,
-            price=price,
-            image=image
+            name=form.name.data,
+            description=form.description.data,
+            price=form.price.data,
+            image=image,
+            user_id=current_user.id
         )
         
         db.session.add(product)
@@ -83,7 +137,7 @@ def create_product():
         flash('Producto creado con éxito', 'success')
         return redirect(url_for('index'))
     
-    return render_template('products/create.html')
+    return render_template('products/create.html', form=form)
 
 @app.route('/products/<int:product_id>')
 def view_product(product_id):
@@ -91,17 +145,23 @@ def view_product(product_id):
     return render_template('products/view.html', product=product)
 
 @app.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_product(product_id):
     product = Products.query.get_or_404(product_id)
     
-    if request.method == 'POST':
-        product.name = request.form.get('name')
-        product.description = request.form.get('description')
-        product.price = request.form.get('price')
+    # Verificar que el usuario sea el propietario o un admin
+    if product.user_id != current_user.id and not current_user.is_admin:
+        flash('No tienes permiso para editar este producto', 'danger')
+        return redirect(url_for('index'))
+    
+    form = ProductForm(obj=product)
+    
+    if form.validate_on_submit():
+        form.populate_obj(product)
         
         # Manejar la carga de imagen
-        if 'image' in request.files:
-            file = request.files['image']
+        if form.image.data:
+            file = form.image.data
             if file.filename != '':
                 # Si hay una imagen existente, intentar borrarla
                 if product.image:
@@ -122,11 +182,17 @@ def edit_product(product_id):
         flash('Producto actualizado con éxito', 'success')
         return redirect(url_for('view_product', product_id=product.id))
     
-    return render_template('products/edit.html', product=product)
+    return render_template('products/edit.html', product=product, form=form)
 
 @app.route('/products/<int:product_id>/delete', methods=['POST'])
+@login_required
 def delete_product(product_id):
     product = Products.query.get_or_404(product_id)
+    
+    # Verificar que el usuario sea el propietario o un admin
+    if product.user_id != current_user.id and not current_user.is_admin:
+        flash('No tienes permiso para eliminar este producto', 'danger')
+        return redirect(url_for('index'))
     
     # Intentar eliminar la imagen si existe
     if product.image:
