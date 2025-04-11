@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}{% if product %}Editar{% else %}Nuevo{% endif %} Producto{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">{% if product %}Editar{% else %}Crear Nuevo{% endif %} Producto</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() if form.hidden_tag }}
+            
+            <div class="mb-4">
+                <label for="name" class="block text-gray-700 font-medium mb-2">Nombre del Producto</label>
+                <input type="text" name="name" id="name" value="{{ product.name if product else '' }}" required class="input-field">
+            </div>
+            
+            <div class="mb-4">
+                <label for="price" class="block text-gray-700 font-medium mb-2">Precio</label>
+                <input type="number" name="price" id="price" step="0.01" value="{{ product.price if product else '' }}" required class="input-field">
+            </div>
+            
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700 font-medium mb-2">Descripción</label>
+                <textarea name="description" id="description" rows="5" class="input-field h-32">{{ product.description if product else '' }}</textarea>
+            </div>
+            
+            <div class="mb-6">
+                <label for="image" class="block text-gray-700 font-medium mb-2">Imagen del Producto</label>
+                {% if product and product.image %}
+                <div class="mb-2">
+                    <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="h-32 object-cover rounded">
+                    <p class="text-sm text-gray-500 mt-1">Imagen actual. Sube una nueva para reemplazarla.</p>
+                </div>
+                {% endif %}
+                <input type="file" name="image" class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-primary file:text-white
+                    hover:file:bg-blue-700">
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <button type="submit" class="btn-primary">
+                    {% if product %}Actualizar{% else %}Guardar{% endif %} Producto
+                </button>
+                <a href="{% if product %}{{ url_for('view_product', product_id=product.id) }}{% else %}{{ url_for('index') }}{% endif %}" class="btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

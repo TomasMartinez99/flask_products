@@ -1,74 +1,70 @@
 {% extends "layout.html" %}
 
-{% block title %}Registro{% endblock %}
+{% block title %}Registrarse{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6 mx-auto">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Registro de Usuario</h4>
+<div class="max-w-md mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 text-center mb-6">Crear Cuenta</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="POST">
+            {{ form.hidden_tag() if form.hidden_tag }}
+            
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 font-medium mb-2">Usuario</label>
+                <input type="text" name="username" id="username" required class="input-field">
+                {% if form and form.username and form.username.errors %}
+                <div class="text-red-600 text-sm mt-1">
+                    {% for error in form.username.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {{ form.username.label(class="form-label") }}
-                        {{ form.username(class="form-control") }}
-                        {% if form.username.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.username.errors %}
-                            <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control") }}
-                        {% if form.email.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.email.errors %}
-                            <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                        {% if form.password.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.password.errors %}
-                            <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.confirm_password.label(class="form-label") }}
-                        {{ form.confirm_password(class="form-control") }}
-                        {% if form.confirm_password.errors %}
-                        <div class="invalid-feedback d-block">
-                            {% for error in form.confirm_password.errors %}
-                            <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
-                </form>
+            
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 font-medium mb-2">Email</label>
+                <input type="email" name="email" id="email" required class="input-field">
+                {% if form and form.email and form.email.errors %}
+                <div class="text-red-600 text-sm mt-1">
+                    {% for error in form.email.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Iniciar sesión</a></p>
+            
+            <div class="mb-4">
+                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña</label>
+                <input type="password" name="password" id="password" required class="input-field">
+                {% if form and form.password and form.password.errors %}
+                <div class="text-red-600 text-sm mt-1">
+                    {% for error in form.password.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
+            
+            <div class="mb-6">
+                <label for="confirm_password" class="block text-gray-700 font-medium mb-2">Confirmar Contraseña</label>
+                <input type="password" name="confirm_password" id="confirm_password" required class="input-field">
+                {% if form and form.confirm_password and form.confirm_password.errors %}
+                <div class="text-red-600 text-sm mt-1">
+                    {% for error in form.confirm_password.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-6">
+                <button type="submit" class="w-full btn-primary">Registrarse</button>
+            </div>
+        </form>
+        
+        <div class="text-center text-gray-600">
+            <p>¿Ya tienes una cuenta? <a href="{{ url_for('login') }}" class="text-primary hover:underline">Iniciar sesión</a></p>
         </div>
     </div>
 </div>

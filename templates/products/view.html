@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <a href="{{ url_for('index') }}" class="inline-flex items-center text-primary hover:underline mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Volver al catálogo
+    </a>
+
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="md:flex">
+            {% if product.image %}
+            <div class="md:w-1/2">
+                <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="w-full h-auto object-cover">
+            </div>
+            {% else %}
+            <div class="md:w-1/2 bg-gray-100 flex items-center justify-center h-64">
+                <span class="text-gray-400">Sin imagen</span>
+            </div>
+            {% endif %}
+            <div class="p-8 {% if product.image %}md:w-1/2{% endif %}">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+                <p class="text-2xl font-bold text-primary mb-4">${{ "%.2f"|format(product.price) }}</p>
+                
+                {% if product.description %}
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-2">Descripción</h2>
+                    <p class="text-gray-600">{{ product.description }}</p>
+                </div>
+                {% endif %}
+                
+                {% if current_user.is_authenticated and (current_user.id == product.user_id or current_user.is_admin) %}
+                <div class="flex space-x-4 mt-8">
+                    <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn-primary">Editar Producto</a>
+                    <a href="#" onclick="confirmDelete({{ product.id }})" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300">Eliminar</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para confirmación de eliminación -->
+<script>
+function confirmDelete(productId) {
+    if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+        // Crear un formulario dinámicamente
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/products/${productId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
