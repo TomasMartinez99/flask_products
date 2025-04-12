@@ -39,8 +39,8 @@ def create_tables():
         # Crear un usuario admin si no existe
         admin = User.query.filter_by(username='admin').first()
         if not admin:
-            admin = User(username='admin', email='admin@example.com', is_admin=True)
-            admin.set_password('adminpass')
+            admin = User(username='admin', email='admin@admin.com', is_admin=True)
+            admin.set_password('admin')
             db.session.add(admin)
             db.session.commit()
             print("Usuario admin creado.")
@@ -58,8 +58,19 @@ def login():
         return redirect(url_for('index'))
     
     form = LoginForm()
+    
+    # Verificar si el formulario fue enviado
+    print(f"Método de solicitud: {request.method}")
+    
     if form.validate_on_submit():
+        print("Formulario validado con éxito")
         user = User.query.filter_by(username=form.username.data).first()
+        print(f"Usuario encontrado: {user is not None}")
+        
+        if user:
+            password_check = user.check_password(form.password.data)
+            print(f"Verificación de contraseña: {password_check}")
+            
         if user and user.check_password(form.password.data):
             login_user(user)
             flash('Has iniciado sesión correctamente', 'success')
@@ -67,8 +78,22 @@ def login():
             return redirect(next_page if next_page else url_for('index'))
         else:
             flash('Usuario o contraseña incorrectos', 'danger')
+    else:
+        # Verificar errores de validación
+        print(f"Errores de validación del formulario: {form.errors}")
     
     return render_template('login.html', form=form)
+
+""" @app.route('/reset_all_passwords')
+def reset_all_passwords():
+    with app.app_context():
+        users = User.query.all()
+        for user in users:
+            # Establece la contraseña igual al nombre de usuario (solo para pruebas)
+            user.set_password(user.username)
+            print(f"Reset password for {user.username}")
+        db.session.commit()
+        return "Todas las contraseñas han sido restablecidas. La contraseña es igual al nombre de usuario." """
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -77,7 +102,11 @@ def register():
     
     form = RegisterForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        user = User(
+            username=form.username.data, 
+            email=form.email.data,
+            is_admin=True  # Cambia acá para hacer a todos administradores
+        )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()

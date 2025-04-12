@@ -13,7 +13,7 @@ class RegisterForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Contraseña', validators=[
         DataRequired(),
-        Length(min=6, message='La contraseña debe tener al menos 6 caracteres')
+        Length(min=5, message='La contraseña debe tener al menos 5 caracteres')
     ])
     confirm_password = PasswordField('Confirmar Contraseña', validators=[
         DataRequired(),

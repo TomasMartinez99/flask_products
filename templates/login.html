@@ -1,5 +1,4 @@
 {% extends "layout.html" %}
-
 {% block title %}Iniciar Sesión{% endblock %}
 
 {% block content %}
@@ -8,20 +7,34 @@
     
     <div class="bg-white rounded-lg shadow-md p-8">
         <form method="POST">
-            {{ form.hidden_tag() if form.hidden_tag }}
+            {{ form.hidden_tag() }}
             
             <div class="mb-4">
-                <label for="username" class="block text-gray-700 font-medium mb-2">Usuario</label>
-                <input type="text" name="username" id="username" required class="input-field">
+                <label for="username" class="block text-gray-700 font-medium mb-2">{{ form.username.label }}</label>
+                {{ form.username(class="input-field", id="username") }}
+                {% if form.username.errors %}
+                    <div class="text-red-500 mt-1">
+                        {% for error in form.username.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             
             <div class="mb-6">
-                <label for="password" class="block text-gray-700 font-medium mb-2">Contraseña</label>
-                <input type="password" name="password" id="password" required class="input-field">
+                <label for="password" class="block text-gray-700 font-medium mb-2">{{ form.password.label }}</label>
+                {{ form.password(class="input-field", id="password") }}
+                {% if form.password.errors %}
+                    <div class="text-red-500 mt-1">
+                        {% for error in form.password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             
             <div class="mb-6">
-                <button type="submit" class="w-full btn-primary">Iniciar Sesión</button>
+                {{ form.submit(class="w-full btn-primary") }}
             </div>
         </form>
         

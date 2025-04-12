@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block title %}Crear Nuevo Producto{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Crear Nuevo Producto</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-4">
+                <label for="name" class="block text-gray-700 font-medium mb-2">{{ form.name.label }}</label>
+                {{ form.name(class="input-field", id="name") }}
+                {% if form.name.errors %}
+                <div class="text-red-500 mt-1">
+                    {% for error in form.name.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label for="price" class="block text-gray-700 font-medium mb-2">{{ form.price.label }}</label>
+                {{ form.price(class="input-field", id="price") }}
+                {% if form.price.errors %}
+                <div class="text-red-500 mt-1">
+                    {% for error in form.price.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label for="description" class="block text-gray-700 font-medium mb-2">{{ form.description.label }}</label>
+                {{ form.description(class="input-field h-32", id="description") }}
+                {% if form.description.errors %}
+                <div class="text-red-500 mt-1">
+                    {% for error in form.description.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-6">
+                <label for="image" class="block text-gray-700 font-medium mb-2">{{ form.image.label }}</label>
+                {{ form.image(class="", id="image") }}
+                {% if form.image.errors %}
+                <div class="text-red-500 mt-1">
+                    {% for error in form.image.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <p class="text-sm text-gray-500 mt-1">Formatos aceptados: JPG, PNG, GIF</p>
+            </div>
+            
+            <div class="flex justify-between">
+                <a href="{{ url_for('index') }}" class="btn-secondary">Cancelar</a>
+                {{ form.submit(class="btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

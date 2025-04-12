@@ -18,11 +18,3 @@ footer {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     transform: translateY(-5px);
 }
-
-.btn-primary {
-    background-color: #0066cc;
-}
-
-.btn-primary:hover {
-    background-color: #0052a3;
-}
