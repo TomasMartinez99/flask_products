@@ -52,11 +52,14 @@
                 <div class="flex items-center space-x-4">
                     <a href="{{ url_for('index') }}" class="text-white hover:text-blue-100">Inicio</a>
                     {% if current_user.is_authenticated %}
-                    <div class="text-white px-4">Hola, {{ current_user.username }}</div>
-                    <a href="{{ url_for('logout') }}" class="bg-white text-primary px-3 py-1 rounded hover:bg-blue-50">Cerrar Sesión</a>
+                        <a href="{{ url_for('dashboard') }}" class="text-white hover:text-blue-100">
+                            <i class="fas fa-chart-line mr-1"></i> Dashboard
+                        </a>
+                        <div class="text-white px-4">Hola, {{ current_user.username }}</div>
+                        <a href="{{ url_for('logout') }}" class="bg-white text-primary px-3 py-1 rounded hover:bg-blue-50">Cerrar Sesión</a>
                     {% else %}
-                    <a href="{{ url_for('login') }}" class="text-white hover:text-blue-100">Iniciar Sesión</a>
-                    <a href="{{ url_for('register') }}" class="bg-white text-primary px-3 py-1 rounded hover:bg-blue-50">Registrarse</a>
+                        <a href="{{ url_for('login') }}" class="text-white hover:text-blue-100">Iniciar Sesión</a>
+                        <a href="{{ url_for('register') }}" class="bg-white text-primary px-3 py-1 rounded hover:bg-blue-50">Registrarse</a>
                     {% endif %}
                 </div>
             </div>

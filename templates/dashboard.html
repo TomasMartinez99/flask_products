@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard Analítico{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard Analítico</h1>
+    
+    <!-- Estadísticas básicas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-4">Totales</h2>
+            <p class="text-gray-700">Productos: <span class="font-bold">{{ stats.total_products }}</span></p>
+            <p class="text-gray-700">Con imágenes: <span class="font-bold">{{ stats.products_with_images }}</span></p>
+            <p class="text-gray-700">Sin imágenes: <span class="font-bold">{{ stats.products_without_images }}</span></p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-4">Análisis de Precios</h2>
+            <p class="text-gray-700">Precio promedio: <span class="font-bold">${{ "%.2f"|format(stats.avg_price) }}</span></p>
+            <p class="text-gray-700">Precio máximo: <span class="font-bold">${{ "%.2f"|format(stats.max_price) }}</span></p>
+            <p class="text-gray-700">Precio mínimo: <span class="font-bold">${{ "%.2f"|format(stats.min_price) }}</span></p>
+            <p class="text-gray-700">Desviación estándar: <span class="font-bold">${{ "%.2f"|format(stats.price_std) }}</span></p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-4">Análisis de Tendencias</h2>
+            {% if stats.avg_price > 0 %}
+                <p class="text-gray-700">Rango de precios: <span class="font-bold">${{ "%.2f"|format(stats.max_price - stats.min_price) }}</span></p>
+                <p class="text-gray-700">Coeficiente de variación: <span class="font-bold">{{ "%.2f"|format(stats.price_std / stats.avg_price * 100) }}%</span></p>
+            {% else %}
+                <p class="text-gray-500 italic">No hay suficientes datos para calcular tendencias.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Visualizaciones -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-4">Distribución de Precios</h2>
+            {% if graphs.price_dist %}
+                <img src="data:image/png;base64,{{ graphs.price_dist }}" alt="Distribución de Precios" class="w-full">
+            {% else %}
+                <div class="flex items-center justify-center h-64 bg-gray-100 rounded text-gray-500">
+                    <p class="text-center">No hay suficientes datos para generar esta visualización.</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-4">Productos con Imágenes</h2>
+            {% if graphs.image_pie %}
+                <img src="data:image/png;base64,{{ graphs.image_pie }}" alt="Productos con Imágenes" class="w-full">
+            {% else %}
+                <div class="flex items-center justify-center h-64 bg-gray-100 rounded text-gray-500">
+                    <p class="text-center">No hay suficientes datos para generar esta visualización.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Relación entre precio y descripción (tercera visualización) -->
+    {% if graphs.price_desc %}
+    <div class="mt-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-4">Relación entre Precio y Longitud de Descripción</h2>
+            <img src="data:image/png;base64,{{ graphs.price_desc }}" alt="Relación Precio-Descripción" class="w-full">
+            <p class="text-sm text-gray-500 mt-2">Este análisis muestra la relación entre el precio de los productos y la longitud de sus descripciones, permitiendo identificar si productos más caros tienden a tener descripciones más detalladas.</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sección de información sobre machine learning -->
+    <div class="mt-8 bg-blue-50 p-6 rounded-lg border border-blue-200">
+        <h2 class="text-xl font-bold text-primary mb-3">Análisis con Machine Learning</h2>
+        <p class="text-gray-700 mb-4">
+            Este dashboard utiliza técnicas de análisis de datos y machine learning para procesar información de tus productos y presentar visualizaciones significativas:
+        </p>
+        <ul class="list-disc pl-5 space-y-2 text-gray-700">
+            <li><span class="font-semibold">Análisis estadístico</span>: Cálculo de métricas clave y distribuciones usando NumPy y Pandas</li>
+            <li><span class="font-semibold">Visualización avanzada</span>: Gráficos generados con Matplotlib y Seaborn para representar patrones</li>
+            <li><span class="font-semibold">Sistema de recomendación</span>: Algoritmo de similitud basado en contenido utilizando TF-IDF y similitud del coseno</li>
+            <li><span class="font-semibold">Análisis de tendencias</span>: Modelado predictivo para simular comportamientos de precios</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

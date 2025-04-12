@@ -52,4 +52,4 @@ Abre tu navegador y ve a `http://localhost:5000`
 ## Credenciales por defecto
 Al iniciar la aplicación por primera vez se crea un usuario administrador:
 - Usuario: `admin`
-- Contraseña: `adminpass`
+- Contraseña: `admin`

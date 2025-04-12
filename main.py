@@ -4,6 +4,16 @@ from werkzeug.utils import secure_filename
 import os
 from models import db, User, Products
 from forms import LoginForm, RegisterForm, ProductForm, SearchForm
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from io import BytesIO
+import base64
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from datetime import datetime, timedelta
+from sqlalchemy import func, desc, and_, or_
 
 # Crear aplicación Flask
 app = Flask(__name__)
@@ -31,6 +41,69 @@ login_manager.login_view = 'login'  # Vista a la que redirigir si se requiere lo
 login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
 login_manager.login_message_category = 'info'
 
+# Clase para el sistema de recomendación
+class ProductRecommender:
+    def __init__(self):
+        self.vectorizer = TfidfVectorizer(stop_words='english')
+        self.tfidf_matrix = None
+        self.products = None
+        self.product_indices = {}
+    
+    def fit(self, products):
+        """Entrena el recomendador con los productos disponibles"""
+        self.products = products
+        
+        # Crear un corpus combinando nombre y descripción
+        corpus = []
+        for i, product in enumerate(products):
+            # Guardar índice para búsquedas rápidas
+            self.product_indices[product.id] = i
+            
+            text = product.name
+            if product.description:
+                text += " " + product.description
+            corpus.append(text)
+        
+        # Crear matriz TF-IDF si hay productos
+        if corpus:
+            self.tfidf_matrix = self.vectorizer.fit_transform(corpus)
+        
+        return self
+    
+    def get_recommendations(self, product_id, num_recommendations=3):
+        """Obtiene productos similares basados en contenido textual"""
+        # Verificar si hay productos o matriz
+        if not self.products or not self.tfidf_matrix is not None:
+            return []
+            
+        # Verificar si el producto existe
+        if product_id not in self.product_indices:
+            return []
+        
+        # Obtener índice del producto
+        idx = self.product_indices[product_id]
+        
+        # Calcular similitud del coseno
+        sim_scores = cosine_similarity(
+            self.tfidf_matrix[idx:idx+1], 
+            self.tfidf_matrix
+        ).flatten()
+        
+        # Obtener los índices de los productos más similares (excluyendo el mismo producto)
+        sim_scores[idx] = 0  # Excluir el mismo producto
+        top_indices = sim_scores.argsort()[-num_recommendations:][::-1]
+        
+        # Filtrar por puntaje de similitud positivo
+        recommended_products = []
+        for i in top_indices:
+            if sim_scores[i] > 0:
+                recommended_products.append(self.products[i])
+        
+        return recommended_products
+
+# Inicializar el recomendador globalmente
+recommender = ProductRecommender()
+
 @login_manager.user_loader
 def load_user(user_id):
     """
@@ -38,6 +111,14 @@ def load_user(user_id):
     basándose en su ID de usuario
     """
     return User.query.get(int(user_id))
+
+# Función para actualizar el recomendador
+def update_recommender():
+    """Actualiza el modelo de recomendación con los productos actuales"""
+    global recommender
+    products = Products.query.all()
+    recommender.fit(products)
+    print(f"Recomendador actualizado con {len(products)} productos")
 
 # Función para crear tablas e inicializar datos
 def create_tables():
@@ -58,12 +139,17 @@ def create_tables():
             print("Usuario admin creado.")
         
         print("Tablas creadas.")
+        
+        # Actualizar recomendador
+        update_recommender()
 
-# Esta función se ejecuta antes de la primera solicitud a la aplicación
-""" @app.before_first_request
-def initialize_database(): """
-"""Inicializa la base de datos antes de la primera solicitud"""
-""" create_tables() """
+# Elimina el decorador @app.before_first_request
+def initialize_database():
+    """Inicializa la base de datos antes de la primera solicitud"""
+    create_tables()
+
+with app.app_context():
+    initialize_database()
 
 # Rutas de autenticación
 @app.route('/login', methods=['GET', 'POST'])
@@ -134,6 +220,163 @@ def logout():
     flash('Has cerrado sesión', 'info')
     return redirect(url_for('index'))
 
+# Ruta para el dashboard analítico
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Dashboard con análisis de datos y visualizaciones"""
+    # Asegurarte que solo los administradores accedan
+    if not current_user.is_admin:
+        flash('Solo los administradores pueden acceder al dashboard', 'danger')
+        return redirect(url_for('index'))
+    
+    # Obtener todos los productos
+    products = Products.query.all()
+    
+    # Si no hay productos, mostrar mensaje
+    if not products:
+        flash('No hay productos para analizar.', 'warning')
+        return redirect(url_for('index'))
+    
+    # Convertir a DataFrame de pandas
+    data = [{
+        'id': p.id,
+        'name': p.name,
+        'price': p.price,
+        'user_id': p.user_id,
+        'description_length': len(p.description or ''),
+        'has_image': 1 if p.image else 0
+    } for p in products]
+    
+    df = pd.DataFrame(data)
+    
+    # Análisis básico
+    stats = {
+        'total_products': len(products),
+        'avg_price': df['price'].mean() if len(df) > 0 else 0,
+        'max_price': df['price'].max() if len(df) > 0 else 0,
+        'min_price': df['price'].min() if len(df) > 0 else 0,
+        'price_std': df['price'].std() if len(df) > 0 else 0,
+        'products_with_images': df['has_image'].sum() if len(df) > 0 else 0,
+        'products_without_images': len(df) - df['has_image'].sum() if len(df) > 0 else 0
+    }
+    
+    # Generar gráficos
+    graphs = {}
+    
+    # Configurar estilo de seaborn
+    sns.set_style('whitegrid')
+    plt.rcParams['figure.figsize'] = (10, 6)
+    plt.rcParams['font.size'] = 12
+    
+    try:
+        # Gráfico 1: Distribución de precios
+        plt.figure(figsize=(10, 5))
+        ax = sns.histplot(df['price'], kde=True, color='#1e70ba', bins=min(15, len(df)))
+        plt.title('Distribución de Precios de Productos', fontsize=16)
+        plt.xlabel('Precio ($)', fontsize=14)
+        plt.ylabel('Frecuencia', fontsize=14)
+        # Añadir línea vertical para precio promedio
+        if len(df) > 0:
+            plt.axvline(df['price'].mean(), color='red', linestyle='--', 
+                        label=f'Precio promedio: ${df["price"].mean():.2f}')
+            plt.legend()
+        
+        # Guardar gráfico como imagen
+        img = BytesIO()
+        plt.savefig(img, format='png', bbox_inches='tight')
+        plt.close()
+        img.seek(0)
+        graphs['price_dist'] = base64.b64encode(img.getvalue()).decode('utf8')
+        
+        # Gráfico 2: Productos con/sin imágenes - Corregido
+        plt.figure(figsize=(8, 8))
+        img_counts = df['has_image'].value_counts()
+        
+        # Verificar que hay datos suficientes y de ambos tipos
+        if len(img_counts) > 0:
+            # Preparar etiquetas y valores
+            labels = []
+            values = []
+            
+            # Añadir valores con imagen si existen
+            if 1 in img_counts:
+                labels.append('Con imagen')
+                values.append(img_counts[1])
+                
+            # Añadir valores sin imagen si existen
+            if 0 in img_counts:
+                labels.append('Sin imagen')
+                values.append(img_counts[0])
+                
+            # Solo crear el gráfico si hay datos
+            if labels and values:
+                colors = ['#1e70ba', '#aaaaaa'][:len(labels)]  # Asegurar que hay suficientes colores
+                explode = [0.05, 0][:len(labels)]  # Asegurar que hay suficientes valores de separación
+                
+                plt.pie(values, 
+                        labels=labels,
+                        autopct='%1.1f%%',
+                        startangle=90,
+                        colors=colors,
+                        explode=explode,
+                        shadow=True)
+                plt.title('Proporción de Productos con Imágenes', fontsize=16)
+                plt.axis('equal')
+                
+                # Guardar gráfico como imagen
+                img = BytesIO()
+                plt.savefig(img, format='png', bbox_inches='tight')
+                plt.close()
+                img.seek(0)
+                graphs['image_pie'] = base64.b64encode(img.getvalue()).decode('utf8')
+            else:
+                # Si no hay datos suficientes para el gráfico de pastel
+                graphs['image_pie'] = None
+        else:
+            # Si no hay datos para crear el gráfico
+            graphs['image_pie'] = None
+        
+        # Gráfico 3: Precio vs. Longitud de descripción
+        if len(df) > 1:  # Solo si hay más de un producto
+            plt.figure(figsize=(10, 6))
+            sns.scatterplot(x='price', y='description_length', data=df, color='#1e70ba', 
+                          alpha=0.7, s=100)
+            plt.title('Relación entre Precio y Longitud de Descripción', fontsize=16)
+            plt.xlabel('Precio ($)', fontsize=14)
+            plt.ylabel('Longitud de descripción (caracteres)', fontsize=14)
+            
+            # Añadir línea de tendencia si hay suficientes puntos
+            z = np.polyfit(df['price'], df['description_length'], 1)
+            p = np.poly1d(z)
+            plt.plot(df['price'], p(df['price']), "r--", 
+                    label=f"Tendencia: y = {z[0]:.2f}x + {z[1]:.2f}")
+            plt.legend()
+            
+            # Guardar gráfico como imagen
+            img = BytesIO()
+            plt.savefig(img, format='png', bbox_inches='tight')
+            plt.close()
+            img.seek(0)
+            graphs['price_desc'] = base64.b64encode(img.getvalue()).decode('utf8')
+        else:
+            graphs['price_desc'] = None
+            
+    except Exception as e:
+        # Manejar errores en la generación de gráficos
+        print(f"Error al generar gráficos: {e}")
+        flash(f"Hubo un problema al generar algunas visualizaciones: {e}", "warning")
+        
+        # Asegurar que hay valores predeterminados para los gráficos
+        if 'price_dist' not in graphs:
+            graphs['price_dist'] = None
+        if 'image_pie' not in graphs:
+            graphs['image_pie'] = None
+        if 'price_desc' not in graphs:
+            graphs['price_desc'] = None
+    
+    return render_template('dashboard.html', stats=stats, graphs=graphs)
+
 # Rutas para CRUD de productos
 @app.route('/')
 def index():
@@ -146,10 +389,22 @@ def index():
     search_form = SearchForm(request.args, meta={'csrf': False})
     query = request.args.get('search', '')
     
-    # Filtrar productos por texto de búsqueda
+    # Implementar búsqueda avanzada
     if query:
-        # La función contains() de SQLAlchemy realiza una búsqueda LIKE %query%
-        products = Products.query.filter(Products.name.contains(query)).all()
+        # Dividir la consulta en términos para búsqueda más precisa
+        search_terms = query.lower().split()
+        
+        # Construir condiciones de búsqueda
+        search_filters = []
+        for term in search_terms:
+            term_filter = or_(
+                Products.name.ilike(f'%{term}%'),
+                Products.description.ilike(f'%{term}%')
+            )
+            search_filters.append(term_filter)
+        
+        # Combinar con AND para resultados más relevantes
+        products = Products.query.filter(and_(*search_filters)).all()
     else:
         products = Products.query.all()
     
@@ -189,6 +444,9 @@ def create_product():
         db.session.add(product)
         db.session.commit()
         
+        # Actualizar el recomendador
+        update_recommender()
+        
         flash('Producto creado con éxito', 'success')
         return redirect(url_for('index'))
     
@@ -196,10 +454,53 @@ def create_product():
 
 @app.route('/products/<int:product_id>')
 def view_product(product_id):
-    """Muestra los detalles de un producto específico"""
+    """Muestra los detalles de un producto específico y recomendaciones"""
     # get_or_404 obtiene el producto o devuelve 404 si no existe
     product = Products.query.get_or_404(product_id)
-    return render_template('products/view.html', product=product)
+    
+    # Obtener recomendaciones
+    similar_products = recommender.get_recommendations(product_id, num_recommendations=3)
+    
+    # Generar datos simulados de tendencia de precios
+    # Simulamos tendencia de precios para últimos 30 días
+    days = 30
+    base_price = product.price
+    np.random.seed(product_id)  # Para consistencia
+    
+    # Generar precios con tendencia y volatilidad
+    trend = np.linspace(-0.1, 0.1, days)  # Tendencia leve
+    volatility = np.random.normal(0, 0.03, days)  # Volatilidad
+    prices = base_price * (1 + trend + volatility)
+    prices = np.clip(prices, base_price * 0.8, base_price * 1.2)  # Limitar rango
+    
+    # Crear gráfico de tendencia
+    plt.figure(figsize=(10, 4))
+    plt.plot(range(days), prices, 'b-', linewidth=2, color='#1e70ba')
+    plt.axhline(y=base_price, color='#e74c3c', linestyle='--', alpha=0.7, 
+               label=f'Precio actual: ${base_price:.2f}')
+    plt.title('Análisis de Tendencia de Precio (Simulado)', fontsize=14)
+    plt.xlabel('Días (histórico)', fontsize=12)
+    plt.ylabel('Precio ($)', fontsize=12)
+    plt.grid(alpha=0.3)
+    plt.legend()
+    
+    # Anotar el último precio
+    plt.annotate(f'${prices[-1]:.2f}', 
+                xy=(days-1, prices[-1]), 
+                xytext=(days-5, prices[-1] * 1.05),
+                arrowprops=dict(arrowstyle='->'))
+    
+    # Convertir a imagen
+    img = BytesIO()
+    plt.savefig(img, format='png', bbox_inches='tight')
+    plt.close()
+    img.seek(0)
+    price_chart = base64.b64encode(img.getvalue()).decode('utf8')
+    
+    return render_template('products/view.html', 
+                          product=product, 
+                          similar_products=similar_products,
+                          price_chart=price_chart)
 
 @app.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -242,6 +543,10 @@ def edit_product(product_id):
                 product.image = filename
         
         db.session.commit()
+        
+        # Actualizar el recomendador
+        update_recommender()
+        
         flash('Producto actualizado con éxito', 'success')
         return redirect(url_for('view_product', product_id=product.id))
     
@@ -273,6 +578,9 @@ def delete_product(product_id):
     
     db.session.delete(product)
     db.session.commit()
+    
+    # Actualizar el recomendador
+    update_recommender()
     
     flash('Producto eliminado con éxito', 'success')
     return redirect(url_for('index'))
