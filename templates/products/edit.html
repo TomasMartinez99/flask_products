@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 
-{% block title %}Crear Nuevo Producto{% endblock %}
+{% block title %}Editar Producto{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Crear Nuevo Producto</h1>
+        <h1 class="text-3xl font-bold text-gray-800">Editar Producto</h1>
         <a href="{{ url_for('index') }}" class="text-primary hover:underline flex items-center">
             <i class="fas fa-arrow-left mr-2"></i> Volver al catálogo
         </a>
@@ -19,7 +19,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
                     <label for="name" class="block text-gray-700 font-medium mb-1">{{ form.name.label }}</label>
-                    {{ form.name(class="input-field w-full", id="name", placeholder="Ej: Perfume Random") }}
+                    {{ form.name(class="input-field w-full", id="name") }}
                     {% if form.name.errors %}
                     <div class="text-red-500 mt-1 text-sm">
                         {% for error in form.name.errors %}
@@ -35,7 +35,7 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500">$</span>
                         </div>
-                        {{ form.price(class="input-field w-full pl-7", id="price", placeholder="0.00") }}
+                        {{ form.price(class="input-field w-full pl-7", id="price") }}
                     </div>
                     {% if form.price.errors %}
                     <div class="text-red-500 mt-1 text-sm">
@@ -50,7 +50,7 @@
             <!-- Descripción compacta -->
             <div class="mb-4">
                 <label for="description" class="block text-gray-700 font-medium mb-1">{{ form.description.label }}</label>
-                {{ form.description(class="input-field w-full h-24", id="description", placeholder="Describe las características del producto...") }}
+                {{ form.description(class="input-field w-full h-24", id="description") }}
                 <div class="flex justify-end">
                     <span class="text-xs text-gray-500 mt-1" id="char-count">0/500 caracteres</span>
                 </div>
@@ -63,20 +63,24 @@
                 {% endif %}
             </div>
             
-            <!-- Sección de imagen mejorada -->
+            <!-- Sección de imagen optimizada -->
             <div class="mb-6">
                 <label for="image" class="block text-gray-700 font-medium mb-1">{{ form.image.label }}</label>
                 
-                <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-100 transition duration-300">
-                    <div class="flex flex-col items-center justify-center py-4">
-                        <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
-                        <p class="text-sm text-gray-600 mb-2">Arrastra y suelta una imagen o haz clic para seleccionar</p>
-                        <div class="w-full md:w-64">
-                            {{ form.image(class="w-full", id="image") }}
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2 flex items-center">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Imagen actual -->
+                    {% if product.image %}
+                    <div class="bg-gray-50 border rounded-lg p-3 flex items-center justify-center h-32">
+                        <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="max-h-full object-contain">
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Input de archivo -->
+                    <div class="flex flex-col justify-center">
+                        {{ form.image(class="", id="image") }}
+                        <p class="text-xs text-gray-500 mt-1">
                             <i class="fas fa-info-circle mr-1"></i>
-                            Formatos aceptados: JPG, PNG, GIF
+                            Deja este campo vacío para mantener la imagen actual
                         </p>
                     </div>
                 </div>
@@ -90,21 +94,13 @@
                 {% endif %}
             </div>
             
-            <!-- Vista previa (se mostrará cuando se seleccione una imagen) -->
-            <div id="image-preview" class="hidden mb-6">
-                <label class="block text-gray-700 font-medium mb-1">Vista previa</label>
-                <div class="bg-gray-50 border rounded-lg p-3 flex items-center justify-center h-48">
-                    <img id="preview-img" src="#" alt="Vista previa" class="max-h-full object-contain">
-                </div>
-            </div>
-            
             <!-- Botones de acción -->
             <div class="flex justify-end space-x-4 border-t pt-6">
-                <a href="{{ url_for('index') }}" class="btn-secondary px-6 py-3 flex items-center">
+                <a href="{{ url_for('view_product', product_id=product.id) }}" class="btn-secondary px-6 py-3 flex items-center">
                     <i class="fas fa-times mr-2"></i> Cancelar
                 </a>
                 <button type="submit" class="btn-primary px-6 py-3 flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Crear Producto
+                    <i class="fas fa-save mr-2"></i> Guardar Cambios
                 </button>
             </div>
         </form>
@@ -113,7 +109,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Contador de caracteres
         const textarea = document.getElementById('description');
         const charCount = document.getElementById('char-count');
         
@@ -123,27 +118,6 @@
         
         textarea.addEventListener('input', updateCount);
         updateCount();
-        
-        // Vista previa de imagen
-        const imageInput = document.getElementById('image');
-        const previewContainer = document.getElementById('image-preview');
-        const previewImage = document.getElementById('preview-img');
-        
-        imageInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                
-                reader.addEventListener('load', function() {
-                    previewImage.setAttribute('src', this.result);
-                    previewContainer.classList.remove('hidden');
-                });
-                
-                reader.readAsDataURL(file);
-            } else {
-                previewContainer.classList.add('hidden');
-            }
-        });
     });
 </script>
 {% endblock %}

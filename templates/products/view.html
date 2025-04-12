@@ -3,52 +3,100 @@
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="container mx-auto px-4 py-6">
     <a href="{{ url_for('index') }}" class="inline-flex items-center text-primary hover:underline mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-        </svg>
+        <i class="fas fa-arrow-left mr-2"></i>
         Volver al catálogo
     </a>
 
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="md:flex">
-            {% if product.image %}
-            <div class="md:w-1/2">
-                <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="w-full h-auto object-cover">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-0">
+            <!-- Imagen del producto -->
+            <div class="flex items-center justify-center bg-gray-50 p-6">
+                {% if product.image %}
+                <div class="w-full h-80 flex items-center justify-center">
+                    <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="max-h-full max-w-full object-contain">
+                </div>
+                {% else %}
+                <div class="w-full h-80 flex items-center justify-center">
+                    <i class="fas fa-image text-gray-300 text-6xl"></i>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="md:w-1/2 bg-gray-100 flex items-center justify-center h-64">
-                <span class="text-gray-400">Sin imagen</span>
-            </div>
-            {% endif %}
-            <div class="p-8 {% if product.image %}md:w-1/2{% endif %}">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
-                <p class="text-2xl font-bold text-primary mb-4">${{ "%.2f"|format(product.price) }}</p>
+
+            <!-- Información del producto -->
+            <div class="p-6">
+                <!-- Encabezado con nombre y precio -->
+                <div class="border-b pb-4 mb-4">
+                    <h1 class="text-2xl font-bold text-gray-800">{{ product.name }}</h1>
+                    <div class="flex items-center mt-2">
+                        <span class="text-3xl font-bold text-primary">${{ "%.2f"|format(product.price) }}</span>
+                    </div>
+                </div>
                 
+                <!-- Descripción del producto -->
                 {% if product.description %}
                 <div class="mb-6">
-                    <h2 class="text-lg font-semibold text-gray-700 mb-2">Descripción</h2>
-                    <p class="text-gray-600">{{ product.description }}</p>
+                    <h2 class="text-lg font-medium text-gray-700 mb-2">Descripción</h2>
+                    <div class="bg-gray-50 rounded-lg p-4 text-gray-600">
+                        {{ product.description }}
+                    </div>
                 </div>
                 {% endif %}
                 
+                <!-- Información adicional -->
+                <div class="mb-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        {% if product.user %}
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Vendedor</h3>
+                            <p class="text-gray-700">{{ product.user.username }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
                 {% if current_user.is_authenticated and (current_user.id == product.user_id or current_user.is_admin) %}
-                <div class="flex space-x-4 mt-8">
-                    <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn-primary">Editar Producto</a>
-                    <a href="#" onclick="confirmDelete({{ product.id }})" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300">Eliminar</a>
+                <div class="border-t pt-6">
+                    <div class="flex space-x-4">
+                        <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn-secondary flex-1 text-center flex items-center justify-center">
+                            <i class="fas fa-edit mr-2"></i> Editar
+                        </a>
+                        <a href="#" onclick="confirmDelete({{ product.id }})" class="bg-red-500 hover:bg-red-600 text-white flex-1 px-4 py-2 rounded transition duration-300 flex items-center justify-center">
+                            <i class="fas fa-trash-alt mr-2"></i> Eliminar
+                        </a>
+                    </div>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
+    
+    <!-- Productos similares o recomendaciones (opcional) -->
+    <div class="mt-12">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">También te puede interesar</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Aquí irían productos recomendados (simulados) -->
+            {% for i in range(3) %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="h-40 bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-image text-gray-300 text-3xl"></i>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-medium text-gray-800">Producto sugerido</h3>
+                    <p class="text-primary font-bold mt-1">$XX.XX</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 
-<!-- Script para confirmación de eliminación -->
+<!-- Diálogo de confirmación mejorado usando SweetAlert (opcional) -->
 <script>
 function confirmDelete(productId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
-        // Crear un formulario dinámicamente
+    if (confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/products/${productId}/delete`;
