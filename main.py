@@ -461,46 +461,9 @@ def view_product(product_id):
     # Obtener recomendaciones
     similar_products = recommender.get_recommendations(product_id, num_recommendations=3)
     
-    # Generar datos simulados de tendencia de precios
-    # Simulamos tendencia de precios para últimos 30 días
-    days = 30
-    base_price = product.price
-    np.random.seed(product_id)  # Para consistencia
-    
-    # Generar precios con tendencia y volatilidad
-    trend = np.linspace(-0.1, 0.1, days)  # Tendencia leve
-    volatility = np.random.normal(0, 0.03, days)  # Volatilidad
-    prices = base_price * (1 + trend + volatility)
-    prices = np.clip(prices, base_price * 0.8, base_price * 1.2)  # Limitar rango
-    
-    # Crear gráfico de tendencia
-    plt.figure(figsize=(10, 4))
-    plt.plot(range(days), prices, 'b-', linewidth=2, color='#1e70ba')
-    plt.axhline(y=base_price, color='#e74c3c', linestyle='--', alpha=0.7, 
-               label=f'Precio actual: ${base_price:.2f}')
-    plt.title('Análisis de Tendencia de Precio (Simulado)', fontsize=14)
-    plt.xlabel('Días (histórico)', fontsize=12)
-    plt.ylabel('Precio ($)', fontsize=12)
-    plt.grid(alpha=0.3)
-    plt.legend()
-    
-    # Anotar el último precio
-    plt.annotate(f'${prices[-1]:.2f}', 
-                xy=(days-1, prices[-1]), 
-                xytext=(days-5, prices[-1] * 1.05),
-                arrowprops=dict(arrowstyle='->'))
-    
-    # Convertir a imagen
-    img = BytesIO()
-    plt.savefig(img, format='png', bbox_inches='tight')
-    plt.close()
-    img.seek(0)
-    price_chart = base64.b64encode(img.getvalue()).decode('utf8')
-    
     return render_template('products/view.html', 
                           product=product, 
-                          similar_products=similar_products,
-                          price_chart=price_chart)
+                          similar_products=similar_products)
 
 @app.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -520,27 +483,33 @@ def edit_product(product_id):
     form = ProductForm(obj=product)
     
     if form.validate_on_submit():
+        # Guardar la imagen actual antes de actualizar otros campos
+        current_image = product.image
+        
         # Actualizar el objeto product con los datos del formulario
+        # Excluimos la imagen para manejarla manualmente
         form.populate_obj(product)
         
-        # Manejar la carga de imagen
-        if form.image.data:
+        # Restaurar la imagen original (porque populate_obj puede haberla limpiado)
+        product.image = current_image
+        
+        # Manejar la carga de imagen SOLO si se seleccionó un archivo real
+        if form.image.data and form.image.data.filename != '':
             file = form.image.data
-            if file.filename != '':
-                # Si hay una imagen existente, intentar borrarla
-                if product.image:
-                    try:
-                        old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], product.image)
-                        if os.path.exists(old_image_path):
-                            os.remove(old_image_path)
-                    except Exception as e:
-                        print(f"Error al eliminar imagen antigua: {e}")
-                
-                # Guardar la nueva imagen
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-                product.image = filename
+            # Si hay una imagen existente, intentar borrarla
+            if product.image:
+                try:
+                    old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], product.image)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                except Exception as e:
+                    print(f"Error al eliminar imagen antigua: {e}")
+            
+            # Guardar la nueva imagen
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            product.image = filename
         
         db.session.commit()
         

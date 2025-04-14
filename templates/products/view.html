@@ -71,56 +71,32 @@
                 {% endif %}
             </div>
 
-            <div class="mt-6 bg-white p-4 rounded-lg shadow">
-                <h2 class="text-xl font-bold text-gray-800 mb-2">Análisis de Tendencia de Precio</h2>
-                <p class="text-gray-600 text-sm mb-4">Análisis generado mediante datos históricos simulados</p>
-                <img src="data:image/png;base64,{{ price_chart }}" alt="Tendencia de Precios" class="w-full">
-            </div>
-
             {% if similar_products %}
-            <div class="mt-8">
+            <div class="mt-6 p-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Productos que podrían interesarte</h2>
-                <p class="text-gray-600 mb-4">Basado en análisis de similitud de texto con machine learning</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {% for product in similar_products %}
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
-                        <div class="h-48 bg-gray-100 flex items-center justify-center">
-                            {% if product.image %}
-                            <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="h-full object-contain">
-                            {% else %}
-                            <i class="fas fa-image text-gray-300 text-4xl"></i>
-                            {% endif %}
+                        <div class="bg-white rounded-lg shadow overflow-hidden flex flex-col h-full">
+                            <div class="h-48 bg-gray-100 flex items-center justify-center">
+                                {% if product.image %}
+                                    <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="h-full object-contain">
+                                {% else %}
+                                    <i class="fas fa-image text-gray-300 text-4xl"></i>
+                                {% endif %}
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col">
+                                <h3 class="font-bold text-lg mb-2">{{ product.name }}</h3>
+                                <p class="text-primary font-bold mb-4">${{ "%.2f"|format(product.price) }}</p>
+                                <div class="mt-auto">
+                                    <a href="{{ url_for('view_product', product_id=product.id) }}" class="btn-secondary block text-center">Ver detalles</a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="p-4">
-                            <h3 class="font-bold text-lg mb-2">{{ product.name }}</h3>
-                            <p class="text-primary font-bold mb-2">${{ "%.2f"|format(product.price) }}</p>
-                            <a href="{{ url_for('view_product', product_id=product.id) }}" class="btn-secondary block text-center">Ver detalles</a>
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
-        </div>
-    </div>
-    
-    <!-- Productos similares o recomendaciones (opcional) -->
-    <div class="mt-12">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">También te puede interesar</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <!-- Aquí irían productos recomendados (simulados) -->
-            {% for i in range(3) %}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <div class="h-40 bg-gray-100 flex items-center justify-center">
-                    <i class="fas fa-image text-gray-300 text-3xl"></i>
-                </div>
-                <div class="p-4">
-                    <h3 class="font-medium text-gray-800">Producto sugerido</h3>
-                    <p class="text-primary font-bold mt-1">$XX.XX</p>
-                </div>
-            </div>
-            {% endfor %}
         </div>
     </div>
 </div>
