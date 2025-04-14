@@ -6,7 +6,6 @@ from models import db, User, Products
 from forms import LoginForm, RegisterForm, ProductForm, SearchForm
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
 from io import BytesIO
 import base64
@@ -14,6 +13,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_, or_
+import matplotlib
+matplotlib.use('Agg')  # IMPORTANTE: Debe estar ANTES de importar pyplot
+import matplotlib.pyplot as plt
 
 # Crear aplicación Flask
 app = Flask(__name__)

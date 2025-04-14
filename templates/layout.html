@@ -55,7 +55,9 @@
                         <a href="{{ url_for('dashboard') }}" class="text-white hover:text-blue-100">
                             <i class="fas fa-chart-line mr-1"></i> Dashboard
                         </a>
-                        <div class="text-white px-4">Hola, {{ current_user.username }}</div>
+                        <div class="text-white flex items-center">
+                            <i class="fas fa-user mr-2"></i>Hola, {{ current_user.username }}
+                        </div>
                         <a href="{{ url_for('logout') }}" class="bg-white text-primary px-3 py-1 rounded hover:bg-blue-50">Cerrar Sesión</a>
                     {% else %}
                         <a href="{{ url_for('login') }}" class="text-white hover:text-blue-100">Iniciar Sesión</a>
